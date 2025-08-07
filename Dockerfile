@@ -1,12 +1,14 @@
 FROM composer:2.6 AS build
 
 WORKDIR /app
-COPY composer.json composer.lock ./
 
-RUN composer update lcobucci/clock lcobucci/jwt
-RUN composer clear-cache && composer install --no-dev --optimize-autoloader
-
+# Copier d'abord tous les fichiers
 COPY . .
+
+# Mettre à jour les packages problématiques puis installer
+RUN composer update lcobucci/clock lcobucci/jwt --no-interaction
+RUN composer clear-cache 
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 FROM php:8.2-apache
 
