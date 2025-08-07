@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->string('neighborhood')->nullable();
             $table->string('phone')->nullable();
+            $table->string('role')->default('client');
             $table->rememberToken();
             $table->timestamps();
         });
