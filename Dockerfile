@@ -3,7 +3,9 @@ FROM composer:2.6 AS build
 WORKDIR /app
 COPY composer.json composer.lock ./
 
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+RUN composer clear-cache
+RUN composer install 
 
 COPY . .
 
