@@ -8,7 +8,10 @@ use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use App\Models\Presence;
 use App\Models\User;
+use App\Models\Site;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class ApiAuthController extends Controller
@@ -16,129 +19,167 @@ class ApiAuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'firstName' => 'required|string|max:255',
+            'lastName' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'prenom'=> 'required|string|max:255',
-            'telephone'=> 'required|string|max:255',
-            'statut'=> 'required|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:255',
         ]);
+
         if ($validator->fails()) {
-            return response(['errors' => $validator->errors()->all()], 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
-        $request['password'] = Hash::make($request['password']);
-        $request['remember_token'] = Str::random(10);
-        $user = User::create($request->toArray());
+
+        $user = User::create([
+            'firstName' => $request->firstName,
+            'lastName' => $request->lastName,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'country' => $request->country,
+            'city' => $request->city,
+            'neighborhood' => $request->neighborhood,
+            'phone' => $request->phone,
+        ]);
+
         $token = $user->createToken('Laravel Password Grant Client')->accessToken;
-        $response = ['token' => $token];
-        return response([$response, ], 200);
-    }
-
-
-    public function getUser()
-    {
-        $user = User::all();
+        
         return response()->json([
-            "data" => $user,
-            "message" => "get user success"
-        ]);
+            'token' => $token,
+            'user' => $user,
+        ], 201);
     }
 
-
-    public function getbyiduser($id)
-    { 
-        $user = User::find($id);
-        return response()->json([
-            "data" => $user,
-            "message" => "get user success"
-        ]);
-    }
-
-
-    // public function update( Request $request, $id)
-    // { 
-    //     $user = User::find($id);
-    //     $user = User::update([
-    //         "name" => $request->name,
-    //         "email" => $request->email,
-    //         "password" => $request->password,
-    //         "prenom" => $request->prenom,
-    //         "telephone" => $request->telephone,
-    //         "statut" => $request->statut,
-    //     ]);
-
-    //     return response($user, 200);
-    // }
-
-    public function update(Request $request, $id)
-{
-    $user = User::find($id);
-    
-    $user->name = $request->name;
-    $user->email = $request->email;
-    $user->password = Hash::make($request->password);
-    $user->prenom = $request->prenom;
-    $user->telephone = $request->telephone;
-    $user->statut = $request->statut;
-    
-    $user->save();
-    
-    return response($user, 200);
-}
-
-
-
+    /**
+     * Handle user login.
+     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:6',
-           
         ]);
+
         if ($validator->fails()) {
-            return response(['errors' => $validator->errors()->all()], 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
+
         $user = User::where('email', $request->email)->first();
-        if ($user) {
-            if (Hash::check($request->password, $user->password)) {
-                $token = $user->createToken('Laravel Password Grant Client')->accessToken;
-                $response = ['token' => $token];
-                return response()->json([
-                    "token" => $response,
-                    "statut" => "200",
-                    "user" => $user,
-                ]);
-            } else {
-                $response = ["message" => "Password mismatch"];
-                return response($response, 422);
-            }
-        } else {
-            $response = ["message" => 'User does not exist'];
-            return response($response, 422);
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => "Ces identifiants ne correspondent pas à nos enregistrements."
+            ], 401);
         }
+
+        $token = $user->createToken('Laravel Password Grant Client')->accessToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user,
+        ], 200);
     }
 
-
+    /**
+     * Handle user logout.
+     */
     public function logout(Request $request)
     {
-        $token = $request->user()->token();
-        $token->revoke();
-        $response = ['message' => 'You have been successfully logged out!'];
+        $request->user()->token()->revoke();
+        
         return response()->json([
-            'statut' => "200",
-            'message'=>$response
-        ]);
+            'message' => 'Vous avez été déconnecté avec succès.'
+        ], 200);
     }
 
-
-   
-
-    public function user()
+    /**
+     * Get the authenticated user.
+     */
+    public function user(Request $request)
     {
-        $user = Auth::user();
-        $presence = Presence::where('user_id', $user->id)->orderByDesc('created_at')->get();
+        $user = $request->user();
+        
         return response()->json([
-            'presence' => $presence
+            'user' => $user,
+            'message' => 'Utilisateur authentifié récupéré avec succès.'
+        ], 200);
+    }
+    
+    /**
+     * Get all users.
+     */
+    public function getUsers()
+    {
+        $users = User::all();
+        
+        return response()->json([
+            'data' => $users,
+            'message' => 'Liste des utilisateurs récupérée avec succès.'
+        ], 200);
+    }
+
+    /**
+     * Get user by ID.
+     */
+    public function getByIdUser($id)
+    { 
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Utilisateur non trouvé.'
+            ], 404);
+        }
+        
+        return response()->json([
+            'data' => $user,
+            'message' => 'Utilisateur récupéré avec succès.'
+        ], 200);
+    }
+
+    /**
+     * Update user details.
+     */
+    public function update(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Utilisateur non trouvé.'
+            ], 404);
+        }
+        
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'sometimes|string|max:255',
+            'lastName' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|min:6',
+            'country' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:255',
         ]);
+        
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user->fill($request->only([
+            'firstName', 'lastName', 'email', 'country', 'city', 'neighborhood', 'phone'
+        ]));
+
+        if ($request->has('password')) {
+            $user->password = Hash::make($request->password);
+        }
+        
+        $user->save();
+        
+        return response()->json([
+            'data' => $user,
+            'message' => 'Utilisateur mis à jour avec succès.'
+        ], 200);
     }
 }
