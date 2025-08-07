@@ -3,12 +3,15 @@ FROM composer:2.6 AS build
 WORKDIR /app
 COPY composer.json composer.lock ./
 
+RUN composer update 
 
-RUN composer clear-cache && composer install --no-dev --optimize-autoloader
+RUN composer update lcobucci/clock lcobucci/jwt
+RUN composer clear-cache && composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+
 
 COPY . .
 
-FROM php:8.1-apache
+FROM php:8.2-fpm-alpine
 
 RUN apt-get update && apt-get install -y \
     libpng-dev \
