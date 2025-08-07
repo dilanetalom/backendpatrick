@@ -4,12 +4,11 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 
 
-RUN composer clear-cache
-RUN composer install 
+RUN composer clear-cache && composer install --no-dev --optimize-autoloader
 
 COPY . .
 
-FROM php:8.2-apache
+FROM php:8.1-apache
 
 RUN apt-get update && apt-get install -y \
     libpng-dev \
