@@ -33,7 +33,7 @@ class ApiAuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $user = User::create([
+        $userData = [
             'firstName' => $request->firstName,
             'lastName' => $request->lastName,
             'email' => $request->email,
@@ -42,7 +42,16 @@ class ApiAuthController extends Controller
             'city' => $request->city,
             'neighborhood' => $request->neighborhood,
             'phone' => $request->phone,
-        ]);
+        ];
+        
+        if ($request->has('role')) {
+            $userData['role'] = $request->role;
+        } else {
+            // Définir un rôle par défaut si aucun n'est fourni
+            $userData['role'] = 'client';
+        }
+
+        $user = User::create($userData);    
 
         $token = $user->createToken('Laravel Password Grant Client')->accessToken;
         
