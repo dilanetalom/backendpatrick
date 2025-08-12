@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Projet extends Model
+
+class Projets extends Model
 {
     use HasFactory;
 
@@ -30,7 +32,7 @@ class Projet extends Model
     ];
 
     // Un projet appartient à un utilisateur
-    public function user(): BelongsTo
+    public function user(): BelongsTo // Correct return type
     {
         return $this->belongsTo(User::class);
     }

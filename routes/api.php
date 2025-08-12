@@ -30,7 +30,7 @@ Route::middleware('auth:api')->group( function () {
     Route::get('/users/{id}', [ApiAuthController::class, 'getByIdUser']);
     Route::put('/users/{id}', [ApiAuthController::class, 'update']);
     Route::post('/projects', [ProjectController::class, 'store']);
-    Route::get('/projects', [ProjectController::class, 'index']);
+    Route::get('/projects', [ProjectController::class, 'index'])->name('index');
     Route::get('/projects/{project}', [ProjectController::class, 'show']);
 
     // Négociation de prix (client/admin)

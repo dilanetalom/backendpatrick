@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
 use App\Models\Proposal;
 use App\Models\Contract;
 use App\Models\File;
@@ -12,7 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\NewProjectSubmitted;
 use App\Mail\NewPriceProposal;
 use Illuminate\Support\Facades\Mail;
-use App\Models\Projet;
+use App\Models\User;
+use App\Models\Projets;
 use Illuminate\Support\Facades\Log;
 
 class ProjectController extends Controller
@@ -32,7 +32,7 @@ class ProjectController extends Controller
            'specific_fields' => 'nullable|string',
         ]);
 
-        $project = new Projet([
+        $project = new Projets([
             'user_id' => Auth::id(),
             'service' => $request->service_id,
             'name' => $request->name,
@@ -64,24 +64,27 @@ class ProjectController extends Controller
     // Lister les projets (pour client ou admin)
     public function index(Request $request)
     {
-        $user = Auth::user();
-        if ($user->role === 'admin') {
-            $projects = Project::with(['user', 'service'])->get();
-        } else {
-            $projects = Project::where('user_id', $user->id)->with(['service'])->get();
-        }
-        return response()->json($projects);
+        $user = Auth::user(); 
+
+    if ($user->role === 'admin') {
+        // L'utilisateur est admin, on récupère tous les projets
+        $projects = Projets::with('user')->get();
+    } else {
+        // L'utilisateur est un client, on récupère seulement ses projets
+        $projects = Projets::where('user_id', $user->id)->get();
+    }
+    return response()->json($projects);
     }
     
     // Afficher les détails d'un projet
-    public function show(Project $project)
+    public function show(Projets $project)
     {
         $project->load(['user', 'service', 'proposals', 'contracts', 'files']);
         return response()->json($project);
     }
     
     // Proposer un prix (pour client ou admin)
-    public function proposePrice(Request $request, Project $project)
+    public function proposePrice(Request $request, Projets $project)
     {
         $request->validate(['price' => 'required|numeric']);
 
@@ -99,7 +102,7 @@ class ProjectController extends Controller
     }
     
     // Mettre à jour la progression du projet (admin)
-    public function updateProgress(Request $request, Project $project)
+    public function updateProgress(Request $request, Projets $project)
     {
         // Vérification de la permission 'admin' déjà gérée par le middleware
         $request->validate(['progress' => 'required|integer|min:0|max:100']);
@@ -111,7 +114,7 @@ class ProjectController extends Controller
     }
 
     // L'admin valide le projet et envoie un contrat
-    public function validateProject(Request $request, Project $project)
+    public function validateProject(Request $request, Projets $project)
     {
         $request->validate(['contract_file' => 'required|file|mimes:pdf,doc,docx']);
 
@@ -132,7 +135,7 @@ class ProjectController extends Controller
     }
 
     // Le client signe et renvoie le contrat
-    public function signContract(Request $request, Project $project)
+    public function signContract(Request $request, Projets $project)
     {
         $request->validate(['signed_contract' => 'required|file|mimes:pdf,doc,docx']);
 
@@ -146,7 +149,7 @@ class ProjectController extends Controller
     }
     
     // L'admin termine le projet
-    public function completeProject(Request $request, Project $project)
+    public function completeProject(Request $request, Projets $project)
     {
         $request->validate(['final_link' => 'nullable|url']);
 
