@@ -2,10 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controller\Api;
 use App\Http\Controllers\Auth\ApiAuthController;
 use App\Http\Controllers\ProjectController;
-
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\Api\ConversationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,13 +30,25 @@ Route::middleware('auth:api')->group( function () {
     Route::get('/users/{id}', [ApiAuthController::class, 'getByIdUser']);
     Route::put('/users/{id}', [ApiAuthController::class, 'update']);
     Route::post('/projects', [ProjectController::class, 'store']);
-    Route::get('/projects', [ProjectController::class, 'index'])->name('index');
+    Route::get('/projects', [ProjectController::class, 'index']); // Affiche les projets du client ou tous pour l'admin
     Route::get('/projects/{project}', [ProjectController::class, 'show']);
 
-    // Négociation de prix (client/admin)
-    Route::post('/proposals/{project}', [ProjectController::class, 'proposePrice']);
-    Route::patch('/projects/{project}/update-progress', [ProjectController::class, 'updateProgress']);
-    Route::post('/projects/{project}/validate', [ProjectController::class, 'validateProject']);
-    Route::post('/projects/{project}/contract', [ProjectController::class, 'uploadContract']);
-    Route::patch('/projects/{project}/complete', [ProjectController::class, 'completeProject']);
+    // Actions sur les projets (nécessitent un middleware de rôle)
+    Route::post('/projects/{project}/accept-proposal', [ProjectController::class, 'acceptProposal']); // Admin accepte
+    Route::post('/projects/{project}/negotiate', [ProjectController::class, 'refuseAndNegotiate']); // Admin refuse et négocie
+    Route::put('/projects/{project}/update-price', [ProjectController::class, 'updateClientPrice']); // Client modifie le prix
+
+    Route::patch('/projects/{project}/update-progress', [ProjectController::class, 'updateProgress']); // Admin met à jour la progression
+
+    // Contrats et signatures
+    Route::post('/projects/{project}/generate-contract', [ProjectController::class, 'generateContract']); // Client génère le contrat
+    Route::post('/projects/{project}/sign-contract', [ProjectController::class, 'signContract']); // Les deux signent
+
+    // Paiements
+    Route::post('/projects/{project}/upload-proof', [PaymentController::class, 'uploadProof']); // Client télécharge la preuve
+    Route::post('/projects/{project}/verify-payment', [PaymentController::class, 'verify']); // Admin vérifie
+
+    // Chat
+    Route::get('/projects/{project}/conversation', [ConversationController::class, 'getMessages']);
+    Route::post('/projects/{project}/send-message', [ConversationController::class, 'sendMessage']);
 });

@@ -13,16 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('contracts', function (Blueprint $table) {
+        Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('projet_id');
             $table->foreign('projet_id')->references('id')->on('projets')->onDelete('cascade');
             
-            $table->text('content'); // Le contenu du contrat généré
-            $table->text('client_signature')->nullable();
-            $table->text('admin_signature')->nullable();
-            
-            $table->timestamp('signed_at')->nullable();
+            $table->decimal('amount', 10, 2);
+            $table->string('proof_path')->nullable(); // Chemin vers le PDF de preuve de paiement
+            $table->boolean('is_verified')->default(false);
             $table->timestamps();
         });
     }
@@ -34,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('contracts');
+        Schema::dropIfExists('payments');
     }
 };

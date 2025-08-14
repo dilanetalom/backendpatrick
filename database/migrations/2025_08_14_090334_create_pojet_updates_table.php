@@ -13,16 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('contracts', function (Blueprint $table) {
+        Schema::create('pojet_updates', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('projet_id');
+            $table->unsignedBigInteger('projet_id'); 
             $table->foreign('projet_id')->references('id')->on('projets')->onDelete('cascade');
-            
-            $table->text('content'); // Le contenu du contrat généré
-            $table->text('client_signature')->nullable();
-            $table->text('admin_signature')->nullable();
-            
-            $table->timestamp('signed_at')->nullable();
+            $table->integer('progress_percentage');
+            $table->string('title');
+            $table->text('description');
+            $table->json('attachments')->nullable();
             $table->timestamps();
         });
     }
@@ -34,6 +32,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('contracts');
+        Schema::dropIfExists('pojet_updates');
     }
 };

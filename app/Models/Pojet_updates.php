@@ -5,27 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-
-class Proposals extends Model
+class Pojet_updates extends Model
 {
     use HasFactory;
-
     protected $fillable = [
-        'project_id', 'user_id', 'message', 
+        'project_id', 'progress_percentage', 'title', 'description', 'attachments'
     ];
 
     protected $casts = [
-        'price_proposal' => 'decimal:2',
-        'is_admin' => 'boolean',
+        'attachments' => 'array',
     ];
 
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 }

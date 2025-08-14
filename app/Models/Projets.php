@@ -22,42 +22,53 @@ class Projets extends Model
         'final_price',
         'status',
         'progress',
-        'specific_fields',
+        'specific_data',
         'final_link',
-    ];
-    
-    // Le champ specific_fields sera automatiquement converti en tableau/objet
-    protected $casts = [
-        'specific_fields' => 'array',
+        'device',
     ];
 
-    // Un projet appartient à un utilisateur
-    public function user(): BelongsTo // Correct return type
+    protected $casts = [
+        'specific_data' => 'json',
+        'deadline' => 'date',
+    ];
+
+    /**
+     * Get the user that owns the project.
+     */
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Un projet appartient à un service
-    public function service(): BelongsTo
-    {
-        return $this->belongsTo(Service::class);
-    }
+    /**
+     * Get the service that the project belongs to.
+     */
+    // public function service()
+    // {
+    //     return $this->belongsTo(Service::class);
+    // }
 
-    // Un projet peut avoir plusieurs propositions de prix
-    public function proposals(): HasMany
-    {
-        return $this->hasMany(Proposal::class);
-    }
-
-    // Un projet a un seul contrat (logique métier)
-    public function contract(): HasOne
+    /**
+     * Get the contract associated with the project.
+     */
+    public function contract()
     {
         return $this->hasOne(Contract::class);
     }
-    
-    // Un projet peut avoir plusieurs fichiers joints
-    public function files(): HasMany
+
+    /**
+     * Get the payments for the project.
+     */
+    public function payments()
     {
-        return $this->hasMany(File::class);
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Get the conversation associated with the project.
+     */
+    public function conversation()
+    {
+        return $this->hasOne(Conversation::class, 'projet_id');
     }
 }

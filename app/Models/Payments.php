@@ -5,25 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-
-class Contracts extends Model
+class Payments extends Model
 {
     use HasFactory;
 
+
     protected $fillable = [
         'project_id',
-        'content',
-        'client_signature',
-        'admin_signature',
-        'signed_at',
-    ];
-
-    protected $casts = [
-        'signed_at' => 'datetime',
+        'amount',
+        'proof_path',
+        'is_verified',
     ];
 
     /**
-     * Get the project that the contract belongs to.
+     * Get the project that the payment belongs to.
      */
     public function project()
     {
